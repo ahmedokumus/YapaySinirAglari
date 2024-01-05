@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import csv
+from tqdm import trange
+
 
 # Sinir ağı sınıfını tanımlayın
 class neuralNetwork:
@@ -87,6 +89,20 @@ class neuralNetwork:
         print("bj:", self.bj)
         print("bm:", self.bm)
 
+def save(fileName):
+    # CSV dosyası oluşturun ve verileri yazın
+    with open(fileName, 'w', newline='') as f:
+        # Verileri sırayla dosyaya yazın
+        writer = csv.writer(f)
+        writer.writerow(['akj:'])
+        np.savetxt(f, n.akj, delimiter=',')
+        writer.writerow(['ajm:'])
+        np.savetxt(f, n.ajm, delimiter=',')
+        writer.writerow(['bj:'])
+        np.savetxt(f, n.bj, delimiter=',')
+        writer.writerow(['bm:'])
+        np.savetxt(f, n.bm, delimiter=',')
+
 # Sinir ağı parametrelerini başlatın
 input_nodes = 784
 hidden_nodes = 173
@@ -100,18 +116,19 @@ n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
 training_data_file = open("projectDatas/sign_mnist_train/sign_mnist_train.csv", 'r')
 training_data_list = training_data_file.readlines()
 training_data_file.close()
-sayac = 0
 # Sinir ağını eğitin
-epochs = 1
-for e in range(epochs):
+epochs = 10
+for e in trange(epochs):
     for record in training_data_list:
         all_values = record.split(',')
         inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
         B_ç = np.zeros(output_nodes) + 0.01
         B_ç[int(all_values[0])] = 0.99
         n.train(inputs, B_ç)
-        sayac += 1
-        print(sayac)
+    
+    if ((e%10 == 0) and e!=0):
+        save(f"weight_bias_value_{e}.csv")
+
 
 # Sinir ağını test edin
 test_data_file = open("projectDatas/sign_mnist_test/sign_mnist_test.csv", 'r')
@@ -127,33 +144,32 @@ for record in test_data_list:
     result = n.query(inputs)
     n.predict_list = np.append(n.predict_list, np.argmax(result))
     n.actual_list = np.append(n.actual_list, int(all_values[0]))
-
-    print("Cikti: %d, Beklenen: %d " % (np.argmax(result), int(all_values[0])))
+    
+    #print("Cikti: %d, Beklenen: %d " % (np.argmax(result), int(all_values[0])))
 
     if np.argmax(result) == int(all_values[0]):
         count += 1
 
+with open('readme.txt', 'a') as f:
+        f.write("Basari: %f\n" % (count / len(test_data_list)))
+
 print("Basari: %f" % (count / len(test_data_list)))
 
 # created by ChatGPT
-def plot_confusion_matrix(y_true, y_pred, classes,
-                          normalize=False,
-                          title=None,
-                          cmap=plt.cm.Blues):
+def plot_confusion_matrix(x_expected, y_predicted, normalize=False, title=None, cmap=plt.cm.Blues):
     """
     This function prints and plots the confusion matrix.
-    Normalization can be applied by setting `normalize=True`.
+    Normalization can be applied by setting normalize=True.
     """
     if not title:
-        if normalize:
-            title = 'Normalized confusion matrix'
-        else:
-            title = 'Confusion matrix, without normalization'
+        title = 'Confusion matrix'
 
     # Compute confusion matrix
-    cm = confusion_matrix(y_true, y_pred)
-    # Only use the labels that appear in the data
+    cm = confusion_matrix(x_expected, y_predicted)
+    classes = np.unique(np.concatenate([x_expected, y_predicted]))
+
     if normalize:
+        # Normalize the confusion matrix if specified
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         print("Normalized confusion matrix")
     else:
@@ -161,53 +177,51 @@ def plot_confusion_matrix(y_true, y_pred, classes,
 
     print(cm)
 
+    # Create a new figure and axis for plotting
     fig, ax = plt.subplots()
+    
+    # Display the confusion matrix as an image
     im = ax.imshow(cm, interpolation='nearest', cmap=cmap)
     ax.figure.colorbar(im, ax=ax)
-    # We want to show all ticks...
-    ax.set(xticks=np.arange(cm.shape[1]),
-           yticks=np.arange(cm.shape[0]),
-           # ... and label them with the respective list entries
+    
+    # Set axis labels and tick marks
+    ax.set(xticks=np.arange(len(classes)),
+           yticks=np.arange(len(classes)),
            xticklabels=classes, yticklabels=classes,
            title=title,
-           ylabel='True label',
-           xlabel='Predicted label')
+           ylabel='Expected Value',
+           xlabel='Predicted Value')
 
-    # Rotate the tick labels and set their alignment.
-    plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
-             rotation_mode="anchor")
+    # Rotate the tick labels for better visibility
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
-    # Loop over data dimensions and create text annotations.
+    # Loop over data dimensions and create text annotations for each cell
     fmt = '.2f' if normalize else 'd'
     thresh = cm.max() / 2.
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
+    for i in range(len(classes)):
+        for j in range(len(classes)):
             ax.text(j, i, format(cm[i, j], fmt),
                     ha="center", va="center",
                     color="white" if cm[i, j] > thresh else "black")
+            
+            # Check if the prediction is correct, and if so, add a light green border
+            # if i == j and cm[i, j] > 0:
+            #     # Add a rectangle with a light green border around correctly predicted cells
+            #     rect = plt.Rectangle((j - 0.5 + 0.05, i - 0.5 + 0.05), 0.9, 0.9, fill=False, alpha=1)
+            #     ax.add_patch(rect)
+
+    # Adjust layout for better appearance
     fig.tight_layout()
+    
+    # Return the figure and axis
     return fig, ax
 
 # Example usage
-y_true = n.actual_list
-y_pred = n.predict_list
+x_expected = n.actual_list
+y_predicted = n.predict_list
 
-plot_confusion_matrix(y_true, y_pred, classes=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+plot_confusion_matrix(x_expected, y_predicted, normalize=False)
 plt.show()
-    
-
-# CSV dosyası oluşturun ve verileri yazın
-with open('weight_bias_value.csv', 'w', newline='') as f:
-    # Verileri sırayla dosyaya yazın
-    writer = csv.writer(f)
-    writer.writerow(['akj:'])
-    np.savetxt(f, n.akj, delimiter=',')
-    writer.writerow(['ajm:'])
-    np.savetxt(f, n.ajm, delimiter=',')
-    writer.writerow(['bj:'])
-    np.savetxt(f, n.bj, delimiter=',')
-    writer.writerow(['bm:'])
-    np.savetxt(f, n.bm, delimiter=',')
 
 # take the data from a record, rearrange it into a 28*28 array and plot it as an image
 all_values = test_data_list[0].split(',')
