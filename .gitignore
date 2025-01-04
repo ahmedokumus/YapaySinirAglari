@@ -1,0 +1,40 @@
+# CSV dosyaları
+*.csv
+
+# Python için genel yoksayma kuralları
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Dağıtım paketleri
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+bin/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Ortam dosyaları
+.env
+venv/
+ENV/
+
+# Sistem dosyaları
+.DS_Store
+Thumbs.db 

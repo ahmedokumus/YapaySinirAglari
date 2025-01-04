@@ -6,6 +6,11 @@ import csv
 from tqdm import trange
 
 
+def txt_file_save(message:str):
+     with open('success_rates.txt', 'a') as f:
+            f.write(message)
+
+
 # Sinir ağı sınıfını tanımlayın
 class neuralNetwork:
 
@@ -28,6 +33,8 @@ class neuralNetwork:
         # Gerçek ve tahmin edilen değer listelerini başlatın
         self.actual_list = np.array([])
         self.predict_list = np.array([])
+        
+        txt_file_save(f"\n###############||Learning_Rate:{self.lr} || Hidden_Node:{self.hnodes}||###############|\n")
 
     # Aktivasyon fonksiyonu olarak sigmoid kullanın
     def activation_func(self, x):
@@ -89,6 +96,7 @@ class neuralNetwork:
         print("bj:", self.bj)
         print("bm:", self.bm)
 
+
 def save(fileName):
     # CSV dosyası oluşturun ve verileri yazın
     with open(fileName, 'w', newline='') as f:
@@ -103,11 +111,36 @@ def save(fileName):
         writer.writerow(['bm:'])
         np.savetxt(f, n.bm, delimiter=',')
 
+
+def test(countt):
+    # Sinir ağını test edin
+    test_data_file = open("projectDatas/sign_mnist_test/sign_mnist_test.csv", 'r')
+    test_data_list = test_data_file.readlines()
+    test_data_file.close()
+    count = 0
+
+    for record in test_data_list:
+        all_values = record.split(',')
+        inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
+        B_ç = np.zeros(output_nodes) + 0.01
+        B_ç[int(all_values[0])] = 0.99
+        result = n.query(inputs)
+        n.predict_list = np.append(n.predict_list, np.argmax(result))
+        n.actual_list = np.append(n.actual_list, int(all_values[0]))
+
+        #print("Cikti: %d, Beklenen: %d " % (np.argmax(result), int(all_values[0])))
+
+        if np.argmax(result) == int(all_values[0]):
+            count += 1
+
+    if ((e%5 == 0) and e!=0):
+        txt_file_save(f"{countt}.Basari orani: %f\n" % (count / len(test_data_list)))
+
 # Sinir ağı parametrelerini başlatın
 input_nodes = 784
-hidden_nodes = 173
+hidden_nodes = 200
 output_nodes = 25
-learning_rate = 0.05
+learning_rate = 0.04
 
 # Sinir ağı örneğini oluşturun
 n = neuralNetwork(input_nodes, hidden_nodes, output_nodes, learning_rate)
@@ -126,34 +159,11 @@ for e in trange(epochs):
         B_ç[int(all_values[0])] = 0.99
         n.train(inputs, B_ç)
     
-    if ((e%10 == 0) and e!=0):
-        save(f"weight_bias_value_{e}.csv")
-
-
-# Sinir ağını test edin
-test_data_file = open("projectDatas/sign_mnist_test/sign_mnist_test.csv", 'r')
-test_data_list = test_data_file.readlines()
-test_data_file.close()
-count = 0
-
-for record in test_data_list:
-    all_values = record.split(',')
-    inputs = (np.asfarray(all_values[1:]) / 255.0 * 0.99) + 0.01
-    B_ç = np.zeros(output_nodes) + 0.01
-    B_ç[int(all_values[0])] = 0.99
-    result = n.query(inputs)
-    n.predict_list = np.append(n.predict_list, np.argmax(result))
-    n.actual_list = np.append(n.actual_list, int(all_values[0]))
+    if ((e%25 == 0) and e!=0):
+        save(f"./weights/weight_bias_value_{e}.csv")
     
-    #print("Cikti: %d, Beklenen: %d " % (np.argmax(result), int(all_values[0])))
+    test(e)
 
-    if np.argmax(result) == int(all_values[0]):
-        count += 1
-
-with open('readme.txt', 'a') as f:
-        f.write("Basari: %f\n" % (count / len(test_data_list)))
-
-print("Basari: %f" % (count / len(test_data_list)))
 
 # created by ChatGPT
 def plot_confusion_matrix(x_expected, y_predicted, normalize=False, title=None, cmap=plt.cm.Blues):
@@ -223,6 +233,9 @@ y_predicted = n.predict_list
 plot_confusion_matrix(x_expected, y_predicted, normalize=False)
 plt.show()
 
+test_data_file = open("projectDatas/sign_mnist_test/sign_mnist_test.csv", 'r')
+test_data_list = test_data_file.readlines()
+test_data_file.close()
 # take the data from a record, rearrange it into a 28*28 array and plot it as an image
 all_values = test_data_list[0].split(',')
 image_array = np.asfarray(all_values[1:]).reshape((28,28))
