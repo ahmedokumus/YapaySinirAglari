@@ -79,6 +79,14 @@ Model performansı, farklı hiperparametreler ile test edilmiş ve sonuçlar `su
 
 Genel olarak, 173 gizli nöronlu ve 0.05 öğrenme oranlı model en iyi performansı göstermiştir. Bu model daha hızlı öğrenme ve daha yüksek doğruluk oranı sağlamıştır. Ancak, 100 gizli nöronlu model de daha az karmaşık yapısına rağmen rekabetçi sonuçlar elde etmiştir.
 
+### Model Ağırlıkları
+
+Eğitim sırasında her 25 epoch'ta bir kaydedilen ağırlık ve bias değerleri CSV dosyaları halinde mevcuttur. Bu dosyalar boyut nedeniyle git deposuna eklenmemiştir, ancak istenildiği takdirde paylaşılabilir. Her model için aşağıdaki dosyalar mevcuttur:
+
+- `weight_bias_value_X.csv`: X. epoch'taki ağırlık ve bias değerleri
+- Her dosya yaklaşık 3.4MB boyutundadır
+- Dosyalar modelin tam olarak replike edilebilmesi için gerekli tüm parametreleri içermektedir
+
 ## Katkıda Bulunanlar
 
 Bu proje, yapay sinir ağları dersi kapsamında geliştirilmiştir. 
